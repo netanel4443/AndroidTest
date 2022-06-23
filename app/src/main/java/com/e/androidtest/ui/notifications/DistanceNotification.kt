@@ -18,6 +18,7 @@ class DistanceNotification {
     private var remote: RemoteViews? = null
     private var notificationManager: NotificationManager? = null
     private var builder: NotificationCompat.Builder? = null
+    private var idCounter = 0
 
 
     fun notificate(context: Context) {
@@ -46,14 +47,15 @@ class DistanceNotification {
         }
 
 
-        (context as Service).startForeground(1, builder!!.build())
+        (context as Service).startForeground(idCounter, builder!!.build())
+        idCounter++
 
     }
 
 
     fun updateNotification(context: Context, string: String) {
         remote!!.setTextViewText(R.id.notification_message, string)
-        NotificationManagerCompat.from(context).notify(1, builder!!.build())
+        NotificationManagerCompat.from(context).notify(idCounter, builder!!.build())
     }
 
 

@@ -11,6 +11,7 @@ import com.e.androidtest.utils.subscribeBlock
 import com.google.android.gms.location.FusedLocationProviderClient
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 import javax.inject.Inject
 
 class BreezometerService : Service() {
@@ -26,7 +27,8 @@ class BreezometerService : Service() {
     lateinit var gpsRepository: GpsRepository
 
 
-    private val notification: DistanceNotification = DistanceNotification()
+    private var notification: DistanceNotification? = DistanceNotification()
+
 
     override fun onBind(p0: Intent?): IBinder? {
         return null
@@ -37,12 +39,21 @@ class BreezometerService : Service() {
         appComponent =
             (application as BaseApplication).appComponent
         appComponent.inject(this)
-        notification.notificate(this)
+
+        notification?.notificate(this)
 
         getLocationFromSubject()
         getDistanceFromSubject()
+        getBreezometerDataFromSubject()
     }
 
+    private fun getBreezometerDataFromSubject() {
+        compositeDisposable.add(gpsRepository.breezometerData
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBlock { baqi ->
+
+            })
+    }
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -50,24 +61,33 @@ class BreezometerService : Service() {
     }
 
     fun getLocationFromSubject() {
-        gpsRepository.gpsLocationTimer()
+        compositeDisposable.add(gpsRepository.gpsLocationTimer()
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBlock {
-               gpsRepository.getLocation()
-            }
+                getLocation()
+            })
+    }
+
+    fun getLocation(){
+        compositeDisposable.add(gpsRepository.getLocation()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeBlock {  })
     }
 
     fun getDistanceFromSubject(){
-        gpsRepository.distanceSubject
+        compositeDisposable.add(gpsRepository.notificationSubject
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBlock {
-                notification.updateNotification(this,it)
-            }
+                notification?.updateNotification(this,it)
+            })
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
         compositeDisposable.clear()
+        notification = null
+        gpsRepository.onDestroy()
     }
 }

@@ -34,7 +34,7 @@ class MainViewModel @Inject constructor(
 
                 if (response.isSuccessful ){
                     response.body()?.let { body->
-                        println("body ${body.data}")
+
                         val baqi=body.data?.indexes?.baqi
                         println("body ${baqi}")
                         baqi?.let { baqi->
@@ -63,6 +63,7 @@ class MainViewModel @Inject constructor(
         gpsRepository.locationSubject
             .observeOn(AndroidSchedulers.mainThread())
             .subscribeBlock { location ->
+
             location?.let {
                 getBreezometerData(it.latitude.toString(), it.longitude.toString())
             }
